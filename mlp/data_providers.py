@@ -133,10 +133,10 @@ class MNISTDataProvider(DataProvider):
         super(MNISTDataProvider, self).__init__(
             inputs, targets, batch_size, max_num_batches, shuffle_order, rng)
 
-    # def next(self):
-    #    """Returns next data batch or raises `StopIteration` if at end."""
-    #    inputs_batch, targets_batch = super(MNISTDataProvider, self).next()
-    #    return inputs_batch, self.to_one_of_k(targets_batch)
+    def next(self):
+       """Returns next data batch or raises `StopIteration` if at end."""
+       inputs_batch, targets_batch = super(MNISTDataProvider, self).next()
+       return inputs_batch, self.to_one_of_k(targets_batch)
     
     def __next__(self):
         return self.next()
@@ -156,7 +156,8 @@ class MNISTDataProvider(DataProvider):
             to zero except for the column corresponding to the correct class
             which is equal to one.
         """
-        raise NotImplementedError()
+        one_of_k = np.eye(len(int_targets))
+        return one_of_k
 
 
 class MetOfficeDataProvider(DataProvider):
