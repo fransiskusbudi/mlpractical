@@ -190,21 +190,79 @@ class MetOfficeDataProvider(DataProvider):
             'Data file does not exist at expected path: ' + data_path
         )
         #TODO: load raw data from text file
+        raw = np.loadtxt(data_path, skiprows=3, usecols=range(2, 32))
+        assert window_size > 1, 'window_size must be at least 2.'
+        self.window_size = window_size
         
         #TODO: filter out all missing datapoints and flatten to a vector
-        
+        filtered = raw[raw >= 0].flatten()
+
         #TODO: normalise data to zero mean, unit standard deviation
-
+        mean = np.mean(filtered)
+        std = np.std(filtered)
+        normalised = (filtered - mean) / std
         #TODO: convert from flat sequence to windowed data
-
+        shape = (normalised.shape[-1] - self.window_size + 1, self.window_size)
+        strides = normalised.strides + (normalised.strides[-1],)
+        windowed = np.lib.stride_tricks.as_strided(
+            normalised, shape=shape, strides=strides)
         #TODO: separate into inputs and targets
         # inputs are the first (window_size - 1) entries in windows
         # inputs = ...
+        inputs = windowed[:, :-1]
         # targets are the last entries in windows
         # targets = ...
+        targets = windowed[:, -1]
         
         # initialise base class with inputs and targets arrays (uncomment below)
-        # super(MetOfficeDataProvider, self).__init__(
-        #     inputs, targets, batch_size, max_num_batches, shuffle_order, rng)
+        super(MetOfficeDataProvider, self).__init__(
+            inputs, targets, batch_size, max_num_batches, shuffle_order, rng)
+
+# class MetOfficeDataProvider(DataProvider):
+#     """South Scotland Met Office weather data provider."""
+
+#     def __init__(self, window_size, batch_size=10, max_num_batches=-1,
+#                  shuffle_order=True, rng=None):
+#         """Create a new Met Office data provider object.
+
+#         Args:
+#             window_size (int): Size of windows to split weather time series
+#                data into. The constructed input features will be the first
+#                `window_size - 1` entries in each window and the target outputs
+#                the last entry in each window.
+#             batch_size (int): Number of data points to include in each batch.
+#             max_num_batches (int): Maximum number of batches to iterate over
+#                 in an epoch. If `max_num_batches * batch_size > num_data` then
+#                 only as many batches as the data can be split into will be
+#                 used. If set to -1 all of the data will be used.
+#             shuffle_order (bool): Whether to randomly permute the order of
+#                 the data before each epoch.
+#             rng (RandomState): A seeded random number generator.
+#         """
+#         data_path = os.path.join(
+#             os.environ['MLP_DATA_DIR'], 'HadSSP_daily_qc.txt')
+#         assert os.path.isfile(data_path), (
+#             'Data file does not exist at expected path: ' + data_path
+#         )
+#         raw = np.loadtxt(data_path, skiprows=3, usecols=range(2, 32))
+#         assert window_size > 1, 'window_size must be at least 2.'
+#         self.window_size = window_size
+#         # filter out all missing datapoints and flatten to a vector
+#         filtered = raw[raw >= 0].flatten()
+#         # normalise data to zero mean, unit standard deviation
+#         mean = np.mean(filtered)
+#         std = np.std(filtered)
+#         normalised = (filtered - mean) / std
+#         # create a view on to array corresponding to a rolling window
+#         shape = (normalised.shape[-1] - self.window_size + 1, self.window_size)
+#         strides = normalised.strides + (normalised.strides[-1],)
+#         windowed = np.lib.stride_tricks.as_strided(
+#             normalised, shape=shape, strides=strides)
+#         # inputs are first (window_size - 1) entries in windows
+#         inputs = windowed[:, :-1]
+#         # targets are last entry in windows
+#         targets = windowed[:, -1]
+#         super(MetOfficeDataProvider, self).__init__(
+#             inputs, targets, batch_size, max_num_batches, shuffle_order, rng)
     def __next__(self):
             return self.next()
